@@ -1,6 +1,5 @@
-//DEPENDENCIES!
 //Configure dotenv:
-require('dotenv').config()
+require('dotenv').config();
 //File system:
 const fs = require('fs');
 //Request:
@@ -13,43 +12,45 @@ const keys = require('./keys');
 const Spotify = require('node-spotify-api');
 //Export module Spotify API Keys:
 const spotify = new Spotify(keys.spotifyApi);
-let spotId = spotify.credentials.id;
-let spotSecret = spotify.credentials.secret;
-// // console.log("spotify-id: ", spotId);
-// // console.log("spotify-secret: ", spotSecret);
 //Export module OMDB & Bands In Town (BIT) API Info
 const api = keys.apiData;
 let omdb = api.omdbApi;
 let bit = api.BandsInTownApi;
-// // console.log("OMDB API: ", omdb);
-// // console.log("Bands In Town API: ", bit);
 
 //Grab user command:
 let userInput = process.argv[2];
 //Grab the user query:
 let userQuery = process.argv.slice(3).join(" ");
-// console.log("User search input: ", userQuery);
 
 //Make a decision based on the commands:
-switch (userInput) {
-    case "spotify-this-song":
-        spotifyThisSong();
-        break;
-    case "movie-this":
-        movieThis();
-        break;
-    case "concert-this":
-        concertThis();
-        break;
-    case "do-what-it-says":
-        doWhatItSays();
-        break;
-    default:
-        console.log('Not found, ask Foogle Bot!');
-        break;
+function userCommand(userInput, userQuery) {
+    switch (userInput) {
+        case "spotify-this-song":
+            spotifyThisSong();
+            break;
+        case "movie-this":
+            movieThis();
+            break;
+        case "concert-this":
+            concertThis();
+            break;
+        case "do-what-it-says":
+            doWhatItSays(userQuery);
+            break;
+        default:
+            console.log(' Not found, ask Foogle Bot! \n Or run a different command: spotify-this (search item) | movie-this (search item) | concert-this (search item)');
+            break;
+    };
 };
 
+userCommand(userInput, userQuery);
+
 function spotifyThisSong() {
+    //first check if unserQuery has input, if not pass in "The Sign" by Ace of Base
+    if (!userQuery.length) {
+        userQuery = "ace of base the sing"
+    };
+
     spotify.search({ type: 'track', query: userQuery, limit: 5 }, function (err, data) {
         if (err) {
             return console.log('Error occurred: ' + err);
@@ -68,67 +69,73 @@ function spotifyThisSong() {
             console.log('- - -');
         };
     });
-    // TODO Should the user define the limit search?
-    // TODO How to access all the names of artists?
-    // TODO If no song is provided then your program will default to "The Sign" by Ace of Base.
 };
 
 function movieThis() {
+    //first check if unserQuery has input, if not pass in Mr. Nobody
+    if (!userQuery.length) {
+        userQuery = "mr nobody"
+    };
+
     request("http://www.omdbapi.com/?t=" + userQuery + "&apikey=" + omdb, function (error, response, body) {
-        // If the request was successful...
-        if (!error && response.statusCode === 200) {
-            // Parse the response into a JSON format
-            let movie = JSON.parse(body);
-            // console.log(movie);
+        // Parse the response into a JSON format
+        let movie = JSON.parse(body);
+        // console.log(movie);
+
+        //If the request is not successful...
+        if (movie.Response === 'False') {
+            console.log("Movie not found! Please try again.");
+            // If the request was successful...
+        } else if (!error && response.statusCode === 200) {
 
             console.log("🎦 ");
             console.log("Title: ", movie.Title);
             console.log("Year: ", movie.Year);
             console.log("Rated: ", movie.Rated);
-            console.log("Rotten Tomatoes Rating: ", movie.Ratings[1].Value);
+
+            let ratingsArr = movie.Ratings;
+            // console.log(ratingsArr);
+            // if undefined:
+            if (ratingsArr.length < 2) {
+                console.log("Rotten Tomatoes Rating: unavailable");
+            } else {
+                console.log("Rotten Tomatoes Rating: ", movie.Ratings[1].Value);
+            };
+
             console.log("Country: ", movie.Country);
             console.log("Language: ", movie.Language);
             console.log("Plot: ", movie.Plot);
             console.log("Actors: ", movie.Actors);
             console.log('- - -');
         };
-        // TODO If the user doesn't type a movie in, the program will output data for the movie 'Mr. Nobody.'
     });
 };
 
 function concertThis() {
     request("https://rest.bandsintown.com/artists/" + userQuery + "/events?app_id=" + bit, function (error, response, body) {
         // If the request was successful...
-
-        if (!error && body !== [] && response.statusCode === 200) {
+        if (!error && response.statusCode === 200) {
             // Parse the response into a JSON format
             let band = JSON.parse(body);
-            console.log(body);
-
-            // for (i = 0; i < 5; i++) {
-            //     console.log("🎸");
-            //     console.log("Artist: ", band[i].lineup[0]);
-            //     console.log("Venue:", band[i].venue.name);
-            //     console.log(`Location: ${band[i].venue.city}, ${band[i].venue.country}`);
-            //     // Moment.js to format the date:
-            //     let date = moment(band[i].datetime).format("MM/DD/YYYY hh:00 A");
-            //     console.log("Date and time:", date);
-            //     console.log('- - -');
-            // };
-        } else {
-            console.log('Band or concert not found!');
-
+            // console.log(band) & console.log(band.length);
+            if (band.length > 0) {
+                for (i = 0; i < 5; i++) {
+                    console.log("🎸");
+                    console.log("Artist: ", band[i].lineup[0]);
+                    console.log("Venue:", band[i].venue.name);
+                    console.log(`Location: ${band[i].venue.city}, ${band[i].venue.country}`);
+                    // Moment.js to format the date:
+                    let date = moment(band[i].datetime).format("MM/DD/YYYY hh:00 A");
+                    console.log("Date and time:", date);
+                    console.log('- - -');
+                };
+            } else {
+                // If request is unsuccessful...
+                console.log('Band or concert not found!');
+            };
         };
-        // TODO console.log("Band not found...")
     });
 };
-
-// // EXAMPLE from Request package:
-// request('http://www.google.com', function (error, response, body) {
-//     console.log('error:', error); // Print the error if one occurred
-//     console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-//     console.log('body:', body); // Print the HTML for the Google homepage.
-// });
 
 // Using the fs Node package, LIRI will take the text inside of random.txt and then use it to call one of LIRI's commands.
 function doWhatItSays() {
@@ -144,15 +151,8 @@ function doWhatItSays() {
         // Put the contents from the array as the user input and query:
         userInput = dataArr[0];
         userQuery = dataArr[1];
-        // It should run spotify-this-song for "I Want it That Way," as follows the text in random.txt.
-        if (userInput === "spotify-this-song") {
-            spotifyThisSong();
-        } else if (userInput === "movie-this") {
-            movieThis();
-        } else if (userInput === "concert-this") {
-            concertThis();
-        } else {
-            console.log("It says nothing!\nRun a different command: spotify-this | movie-this | concert-this");
-        };
+        // It should run spotify-this-song for "I Want it That Way," as follows the text in random.txt
+        //Change the text in random.txt to a different command and see what happens...
+        userCommand(userInput, userQuery);
     });
 };
