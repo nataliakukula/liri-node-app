@@ -38,7 +38,7 @@ function userCommand(userInput, userQuery) {
             doWhatItSays(userQuery);
             break;
         default:
-            console.log(' Not found, ask Foogle Bot! \n Or run a different command: spotify-this (search item) | movie-this (search item) | concert-this (search item)');
+            console.log(' Not found, ask Foogle Bot! \n Or run a different command: \n spotify-this-song (search item) | movie-this (search item) | concert-this (search item) | do-what-it-says');
             break;
     };
 };
